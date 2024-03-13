@@ -39,3 +39,5 @@ credentials
 __pycache__
 
 .venv
+*-amd64
+*.json

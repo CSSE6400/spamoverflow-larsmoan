@@ -7,7 +7,7 @@ GET {{baseUrl}}/health
 GET {{baseUrl}}/customers/12f/emails
 
 
-### Scan request
+### Scan request from customer_id
 POST {{baseUrl}}/customers/12f/emails
 Content-Type: application/json
 

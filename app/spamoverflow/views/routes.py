@@ -2,6 +2,9 @@ from flask import Blueprint, jsonify, request
 import subprocess
 import shortuuid
 import json
+from spamoverflow.models.spamoverflow import Email 
+
+from spamoverflow.models import db
 
 api = Blueprint('api', __name__)
 
@@ -22,30 +25,42 @@ def get_emails(customer_id: str):
 
 @api.route('/customers/<string:customer_id>/emails', methods=['POST'])
 def scan_request(customer_id: str):
-    #The relevant content for spamhammer
-    content = request.json.get('contents').get('body')    
-    metadata = request.json.get('metadata').get('spamhammer')
-    id = shortuuid.uuid()
 
-    json_data = {
+    # 1: Add the email to the database if it is not present
+    id = shortuuid.uuid()
+    contents = request.json.get('contents')
+    spamhammer_metadata = request.json.get("metadata").get("spamhammer")
+    body = contents.get("body")
+
+    email = Email(
+        email_id = id,
+        customer_id = customer_id,
+        subject = contents.get("subject"),
+        from_id = contents.get("from"),
+        to_id = contents.get("to")
+    )
+
+    db.session.add(email)
+    db.session.commit()
+    
+    spamhammer_input = {
         "id": id,
-        "content": content,
-        "metadata": metadata
+        "content": body,
+        "metadata": spamhammer_metadata
     }
+    print(spamhammer_input)
 
     try:
         # Specify the path to the SpamHammer binary
         binary_path = "./spamoverflow/spamhammer-v1.0.0-darwin-amd64"  # Update this with the actual path
     
         # Run the SpamHammer binary with any necessary arguments
-        result = subprocess.run([binary_path, "scan"], input=json.dumps(json_data), capture_output=True, text=True, check=True)
+        result = subprocess.run([binary_path, "scan"], input=json.dumps(spamhammer_input), capture_output=True, text=True, check=True)
         output = json.loads(result.stdout)
-
-        #For now we simply return the output from spamhammer, later this should be handled via persistent storage etc
-        return jsonify(output), 200
+        return output, 200
 
     except subprocess.CalledProcessError as e:
-        # Handle any errors, such as if the binary fails to execute
-        return jsonify({"Error trying to run spamhammer to scan an email": e})
-
+        # Handle the CalledProcessError
+        error_message = f"Error trying to run spamhammer to scan an email: {str(e)}"
+        return jsonify({"error": error_message}), 500  # Return a JSON response with the error message and status code 500
     

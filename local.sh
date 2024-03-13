@@ -7,7 +7,7 @@ cd app
 export DOCKER_BUILDKIT=1
 
 #Build the docker container
-docker buidl -t s4827064 .
+docker build -t s4827064 .
 
 #Run the docker container in the background and remove after it is closed
 docker run -d --rm -p 8080:8080 s4827064

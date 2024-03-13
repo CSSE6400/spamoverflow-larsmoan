@@ -1,15 +1,12 @@
 [tool.poetry]
-name = "spamoverflow-larsmoan"
+name = "app"
 version = "0.1.0"
 description = ""
 authors = ["Lars Moan <lars.ostberg.moan@gmail.com>"]
 readme = "README.md"
-packages = [{include = "spamoverflow_larsmoan"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-flask = "^3.0.2"
-sqlalchemy = "^2.0.28"
 
 
 [build-system]

@@ -37,3 +37,5 @@ terraform.rc
 credentials
 
 __pycache__
+
+.venv

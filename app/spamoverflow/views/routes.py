@@ -2,7 +2,9 @@ from flask import Blueprint, jsonify, request
 import subprocess
 import shortuuid
 import json
-from spamoverflow.models.spamoverflow import Email 
+from spamoverflow.models.spamoverflow import Email, Domain
+from utils.utils import find_links
+from sqlalchemy import Enum
 
 from spamoverflow.models import db
 
@@ -32,15 +34,26 @@ def scan_request(customer_id: str):
     spamhammer_metadata = request.json.get("metadata").get("spamhammer")
     body = contents.get("body")
 
+
     email = Email(
-        email_id = id,
+        id = id,
         customer_id = customer_id,
         subject = contents.get("subject"),
         from_id = contents.get("from"),
-        to_id = contents.get("to")
+        to_id = contents.get("to"),
+        body = body,
+        state = "pending"
     )
-
     db.session.add(email)
+
+    domains = find_links(body)
+    for link in domains:
+        domain = Domain(link=link)
+        db.session.add(domain)
+        email.domains.append(domain)
+    
+    db.session.commit()
+    db.session.delete(email)
     db.session.commit()
     
     spamhammer_input = {
@@ -48,7 +61,6 @@ def scan_request(customer_id: str):
         "content": body,
         "metadata": spamhammer_metadata
     }
-    print(spamhammer_input)
 
     try:
         # Specify the path to the SpamHammer binary
@@ -57,6 +69,18 @@ def scan_request(customer_id: str):
         # Run the SpamHammer binary with any necessary arguments
         result = subprocess.run([binary_path, "scan"], input=json.dumps(spamhammer_input), capture_output=True, text=True, check=True)
         output = json.loads(result.stdout)
+        # output format: {'id': '4J4TXfZjsetACLv59H7i8L', 'malicious': True}
+
+        malicious = output.get("malicious")
+        print(malicious)
+
+        #Create the return response
+
+        # 1 update the database entry with the result of the spamhammer
+        # 2 simply fetch from the database - ensure that we return what the db "knows"
+
+
+
         return output, 200
 
     except subprocess.CalledProcessError as e:

@@ -1,5 +1,8 @@
 from flask import Flask
 from os import environ
+from spamoverflow.models.spamoverflow import Email, Domain
+from flask_sqlalchemy import SQLAlchemy 
+
 
 def create_app(config_overrides=None): 
    app = Flask(__name__) 
@@ -10,14 +13,13 @@ def create_app(config_overrides=None):
        app.config.update(config_overrides)
  
    # Load the models 
-   from spamoverflow.models import db 
-   from spamoverflow.models.spamoverflow import Email 
+   from spamoverflow.models import db
    db.init_app(app) 
  
    # Create the database tables 
    with app.app_context(): 
-      db.create_all() 
-      db.session.commit() 
+      db.create_all()
+
  
    # Register the blueprints 
    from spamoverflow.views.routes import api

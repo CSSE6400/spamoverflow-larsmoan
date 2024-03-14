@@ -1,12 +1,18 @@
-from . import db 
 import datetime
-from sqlalchemy import Enum
+from . import db
+import shortuuid
+from sqlalchemy import Enum, ForeignKey, String
+from sqlalchemy.orm import relationship
+from sqlalchemy.dialects.postgresql import UUID
+
+
 
 class Email(db.Model):
     __tablename__ = 'emails'
 
-    email_id = db.Column(db.String, primary_key=True)
-    customer_id = db.Column(db.String)  #Might be a foreign key
+    id = db.Column(String(22), primary_key=True, default=shortuuid.uuid)
+
+    customer_id = db.Column(db.String)  #Might be a foreign key later on
 
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow) 
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow) 
@@ -15,14 +21,18 @@ class Email(db.Model):
     from_id = db.Column(db.String, nullable=False)
     subject = db.Column(db.String, nullable=True)
     body = db.Column(db.String)
-
     state = db.Column(Enum("pending", "scanned", "failed")) #Status for the email
-    domains = db.Column(db.String)    #Links found in the email
 
-    #spamhammer_metadata = db.Column(db.String, nullable=True)   #The content which is passed to the spamhammer binary
+    domains = relationship("Domain", back_populates="email", cascade="all, delete")
+
+
     malicious = db.Column(db.Boolean, nullable=False, default=False)
 
-""" class Customer(db.Model):
-    __tablename__ = "customers" #I believe this is actually clients like google etc? because they are "customers" of my service
-    customer_id = db.Column(db.String, primary_key=True)
-    #Some foreign keys to emails directly? """
+class Domain(db.Model):
+    __tablename__ = "domains"
+    id = db.Column(String(22), primary_key=True, default=shortuuid.uuid)
+    link = db.Column(db.String)
+
+    # Establishing many-to-one relationship with Email
+    email_id = db.Column(String(22), ForeignKey('emails.id', ondelete='CASCADE'))  
+    email = relationship("Email", back_populates="domains")

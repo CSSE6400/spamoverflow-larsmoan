@@ -12,8 +12,6 @@ class Email(db.Model):
 
     id = db.Column(String(22), primary_key=True, default=shortuuid.uuid)
 
-    customer_id = db.Column(db.String)  #Might be a foreign key later on
-
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow) 
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow) 
 
@@ -27,6 +25,10 @@ class Email(db.Model):
     #One to many relation with Domain
     domains = relationship("Domain", back_populates="email", cascade="all, delete")
 
+    #Many to one relationship with Customer
+    customer_id = db.Column(String(22), ForeignKey("customers.id", ondelete="CASCADE"))
+    customer = relationship("Customer", back_populates="emails")
+
 
 class Domain(db.Model):
     __tablename__ = "domains"
@@ -37,4 +39,11 @@ class Domain(db.Model):
     email_id = db.Column(String(22), ForeignKey('emails.id', ondelete='CASCADE'))  
     email = relationship("Email", back_populates="domains")
 
+
 #Table for Customers, which I believe is email clients
+class Customer(db.Model):
+    __tablename__ = "customers"
+    id = db.Column(String(22), primary_key=True, default=shortuuid.uuid)
+
+    #One to many relationship to Email
+    emails = relationship("Email", back_populates="customer", cascade="all, delete")

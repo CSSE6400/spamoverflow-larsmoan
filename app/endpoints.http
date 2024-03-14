@@ -8,7 +8,7 @@ GET {{baseUrl}}/customers/12f/emails
 
 
 ### Scan request from customer_id
-POST {{baseUrl}}/customers/12f/emails
+POST {{baseUrl}}/customers/12f12/emails
 Content-Type: application/json
 
 {

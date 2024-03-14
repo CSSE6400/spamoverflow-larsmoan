@@ -1,6 +1,6 @@
 from flask import Flask
 from os import environ
-from spamoverflow.models.spamoverflow import Email, Domain
+from spamoverflow.models.spamoverflow import Email, Domain, Customer
 from flask_sqlalchemy import SQLAlchemy 
 
 

@@ -3,8 +3,7 @@ import subprocess
 import shortuuid
 import json
 from spamoverflow.models.spamoverflow import Email, Domain
-from utils.utils import find_links
-from sqlalchemy import Enum
+from utils.utils import find_links, validate_content_json
 
 from spamoverflow.models import db
 
@@ -25,24 +24,29 @@ def get_emails(customer_id: str):
     return jsonify({"user": customer_id}), 200
 
 
+
+# Scan request for an email
 @api.route('/customers/<string:customer_id>/emails', methods=['POST'])
 def scan_request(customer_id: str):
+    # 1: Add the email to the database
+    email_id = shortuuid.uuid()
+    contents = request.json
 
-    # 1: Add the email to the database if it is not present
-    id = shortuuid.uuid()
-    contents = request.json.get('contents')
-    spamhammer_metadata = request.json.get("metadata").get("spamhammer")
-    body = contents.get("body")
+    spamhammer_metadata = contents.get("metadata").get("spamhammer")
+    body = contents.get("contents").get("body")
 
+    valid, e = validate_content_json(contents)  
+    if not valid:
+        # Return the error message as JSON with status code 401 (Unauthorized)
+        return jsonify({"error": e.message}), 401
 
     email = Email(
-        id = id,
+        id = email_id,
         customer_id = customer_id,
-        subject = contents.get("subject"),
-        from_id = contents.get("from"),
-        to_id = contents.get("to"),
-        body = body,
-        state = "pending"
+        subject = contents.get("contents").get("subject"),
+        from_id = contents.get("contents").get("from"),
+        to_id = contents.get("contents").get("to"),
+        body = body
     )
     db.session.add(email)
 
@@ -53,11 +57,9 @@ def scan_request(customer_id: str):
         email.domains.append(domain)
     
     db.session.commit()
-    db.session.delete(email)
-    db.session.commit()
     
     spamhammer_input = {
-        "id": id,
+        "id": email_id,
         "content": body,
         "metadata": spamhammer_metadata
     }
@@ -72,16 +74,33 @@ def scan_request(customer_id: str):
         # output format: {'id': '4J4TXfZjsetACLv59H7i8L', 'malicious': True}
 
         malicious = output.get("malicious")
-        print(malicious)
 
-        #Create the return response
+        #Updating the values in the database
+        email.malicious = malicious
+        email.status = "scanned"
+        db.session.commit()
 
-        # 1 update the database entry with the result of the spamhammer
-        # 2 simply fetch from the database - ensure that we return what the db "knows"
+        
+        #domain_links = [domain.link for domain in email.domains]
 
-
-
-        return output, 200
+        #Creating the API response
+        response = {
+            "id": email.id,
+            "created_at": email.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "updated_at": email.updated_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "contents": {
+                "to": email.to_id,
+                "from": email.from_id,
+                "subject": email.subject
+            },
+            "status": email.status,
+            "malicious": email.malicious,
+            "domains": [domain.link for domain in email.domains],
+            "metadata": {
+                "spamhammer": spamhammer_metadata
+            }
+        }
+        return response, 201
 
     except subprocess.CalledProcessError as e:
         # Handle the CalledProcessError

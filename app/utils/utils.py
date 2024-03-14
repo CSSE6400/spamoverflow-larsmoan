@@ -2,12 +2,12 @@ import re
 import jsonschema
 from jsonschema import validate
 
-def find_links(text: str):
-    # Regular expression to find all URLs in the text
-    url_regex = r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\\(\\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+(?=\b)'
+def find_domains(text: str):
+    # Regular expression to find all domains in the text
+    domain_regex = r'(?:http[s]?://)?(?:www\.)?([a-zA-Z0-9.-]+(?:\.[a-zA-Z]{2,4}))'
 
-    links = re.findall(url_regex, text)
-    return links
+    domains = re.findall(domain_regex, text)
+    return domains
 
 #Validates that the body sent follows the schema
 def validate_content_json(content):

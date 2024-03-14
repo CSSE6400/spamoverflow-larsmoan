@@ -6,9 +6,11 @@ GET {{baseUrl}}/health
 ### emails
 GET {{baseUrl}}/customers/12f/emails
 
+### Info about a specific email_id from customer_id
+GET {{baseUrl}}/customers/1111f12/emails/Jh5KD8ZELBF3TAWMUBaU6Y
 
 ### Scan request from customer_id
-POST {{baseUrl}}/customers/12f12/emails
+POST {{baseUrl}}/customers/1111f12/emails
 Content-Type: application/json
 
 {
@@ -19,6 +21,6 @@ Content-Type: application/json
     "subject" : "Important information about your account.",
     "from" : "support@uq.edu.au",
     "to": "Testsender@gmail.com",
-    "body" : "Dear customer,\nWe have noticed some suspicious activity https://vg.no on your account. Please click [here](https://scam-check.uq.edu.au?userId=uqehugh3) to reset your password."
+    "body" : "Dear customer,\nWe have noticed some suspicious activity on your account. Please click [here](https://scam-check.uq.edu.au?userId=uqehugh3) to reset your password."
   }
 }

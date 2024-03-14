@@ -1,8 +1,8 @@
 from flask import Flask
 from os import environ
 from spamoverflow.models.spamoverflow import Email, Domain, Customer
-from flask_sqlalchemy import SQLAlchemy 
-
+from apscheduler.schedulers.background import BackgroundScheduler
+from spamoverflow.tasks.periodic_tasks import update_domains_count
 
 def create_app(config_overrides=None): 
    app = Flask(__name__) 
@@ -24,5 +24,13 @@ def create_app(config_overrides=None):
    # Register the blueprints 
    from spamoverflow.views.routes import api
    app.register_blueprint(api) 
+
+   def run_update_domains_count():
+        with app.app_context():
+            update_domains_count()
+
+   scheduler = BackgroundScheduler()
+   scheduler.add_job(run_update_domains_count, 'interval', seconds=5) 
+   scheduler.start()
  
    return app

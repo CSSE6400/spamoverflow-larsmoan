@@ -3,12 +3,10 @@ import subprocess
 import shortuuid
 import json
 from spamoverflow.models.spamoverflow import Email, Domain, Customer
-from utils.utils import find_links, validate_content_json
-
+from utils.utils import find_domains, validate_content_json
 from spamoverflow.models import db
 
 api = Blueprint('api', __name__)
-
 
 @api.route('/')
 def home():
@@ -18,18 +16,50 @@ def home():
 def health():
     return jsonify({"status": "ok"}), 200
 
+#Get info about a specific email from a specific customer
+@api.route('/customers/<string:customer_id>/emails/<string:id>', methods=['GET'])
+def get_email(customer_id: str, id: str):
+    print(customer_id, id)
+    email = Email.query.filter(Email.customer_id == customer_id, Email.id == id).first()
+    if not email:
+        return jsonify({"Error": f"Could not find an entry in the database for customer_id: {customer_id} and email_id: {id}"}), 404
+    try:
+        response = {
+            "id": email.id,
+            "created_at": email.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "updated_at": email.updated_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "contents": {
+                "to": email.to_id,
+                "from": email.from_id,
+                "subject": email.subject
+            },
+            "status": email.status,
+            "malicious": email.malicious,
+            "domains": [domain.link for domain in email.domains],
+            "metadata": {
+                "spamhammer": email.spamhammer_metadata
+            }
+        }
+        return response, 200
+    except Exception as e:
+        return jsonify({str(e)}), 500
+
 
 @api.route('/customers/<string:customer_id>/emails', methods=['GET'])
 def get_emails(customer_id: str):
     return jsonify({"user": customer_id}), 200
 
 
-
 # Scan request for an email
 @api.route('/customers/<string:customer_id>/emails', methods=['POST'])
 def scan_request(customer_id: str):
     email_id = shortuuid.uuid() #Id created for that specific email
-    
+
+    #Extract if the customer is of high priority or not, for now we simply add the priority to the database
+    priority = False
+    if customer_id[:4] == "1111":
+        priority = True
+
     contents = request.json
     spamhammer_metadata = contents.get("metadata").get("spamhammer")
     body = contents.get("contents").get("body")
@@ -41,9 +71,11 @@ def scan_request(customer_id: str):
     email = Email(
         id = email_id,
         customer_id = customer_id,
+        priority = priority,
         subject = contents.get("contents").get("subject"),
         from_id = contents.get("contents").get("from"),
         to_id = contents.get("contents").get("to"),
+        spamhammer_metadata = spamhammer_metadata,
         body = body
     )
     db.session.add(email)
@@ -54,7 +86,7 @@ def scan_request(customer_id: str):
         db.session.add(customer)
         db.session.commit()
 
-    domains = find_links(body)  #Extracts all the links from the body of the email
+    domains = find_domains(body)  #Extracts all the links from the body of the email
 
     for link in domains:
         domain = Domain(link=link)

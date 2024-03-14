@@ -12,6 +12,8 @@ class Email(db.Model):
 
     id = db.Column(String(22), primary_key=True, default=shortuuid.uuid)
 
+    priority = db.Column(db.Boolean, nullable=False, default=False)
+
     created_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow) 
     updated_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow) 
 
@@ -21,6 +23,8 @@ class Email(db.Model):
     body = db.Column(db.String)
     status = db.Column(Enum("pending", "scanned", "failed"), default="pending") #Status for the email
     malicious = db.Column(db.Boolean, nullable=False, default=False)
+
+    spamhammer_metadata = db.Column(db.String)
 
     #One to many relation with Domain
     domains = relationship("Domain", back_populates="email", cascade="all, delete")
@@ -33,11 +37,16 @@ class Email(db.Model):
 class Domain(db.Model):
     __tablename__ = "domains"
     id = db.Column(String(22), primary_key=True, default=shortuuid.uuid)
-    link = db.Column(db.String)
+    link = db.Column(db.String) #Might be a foreing key to the count table later on
 
     # Establishing many-to-one relationship with Email
     email_id = db.Column(String(22), ForeignKey('emails.id', ondelete='CASCADE'))  
     email = relationship("Email", back_populates="domains")
+
+class DomainCount(db.Model):
+    __tablename__ = "domaincount"
+    id = db.Column(String, primary_key=True)
+    count = db.Column(db.Integer)
 
 
 #Table for Customers, which I believe is email clients

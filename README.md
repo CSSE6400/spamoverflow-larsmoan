@@ -7,5 +7,5 @@ Late on when the application is said to scale and take into account high priorit
 I.e one process should simply save the scan-request and another should continously work on the database and actually do the scan requests themselves.
 For now, this is done in the same process.
 
-1. Extract the priority from the scan request via the email_id and save it in the database. 
-2. 
+1. Rewrite the post request so that it doesnt run the spamhammer directly
+2. Ensure that it is domains returned and not actually the links themselves

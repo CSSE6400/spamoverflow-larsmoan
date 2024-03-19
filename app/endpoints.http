@@ -4,7 +4,7 @@
 GET {{baseUrl}}/health
 
 ### emails
-GET {{baseUrl}}/customers/12f/emails
+GET {{baseUrl}}/customers/1111f12/emails
 
 ### Info about a specific email_id from customer_id
 GET {{baseUrl}}/customers/1111f12/emails/Jh5KD8ZELBF3TAWMUBaU6Y
@@ -19,8 +19,18 @@ Content-Type: application/json
   },
   "contents" : {
     "subject" : "Important information about your account.",
-    "from" : "support@uq.edu.au",
-    "to": "Testsender@gmail.com",
-    "body" : "Dear customer,\nWe have noticed some suspicious activity on your account. Please click [here](https://scam-check.uq.edu.au?userId=uqehugh3) to reset your password."
+    "from" : "support2_newone@uq.edu.au",
+    "to": "Testrecipient@gmail.com",
+    "body" : "Dear customer,\nWe have https://vg.no noticed some suspicious activity on your account. Please click [here](https://scam-check.uq.edu.au?userId=uqehugh3) to reset your password."
   }
 }
+
+### Domains for specific customer_id. Testcase of customer_id=1111f12
+GET {{baseUrl}}/customers/1111f12/reports/domains
+
+### Actors for a specific customer_id: Get the senders of malicious emails
+GET {{baseUrl}}/customers/1111f12/reports/actors
+
+### Recipients of malicious emails
+GET {{baseUrl}}/customers/1111f12/reports/recipients
+

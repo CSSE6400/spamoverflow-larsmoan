@@ -2,9 +2,12 @@ from flask import Blueprint, jsonify, request
 import subprocess
 import shortuuid
 import json
-from spamoverflow.models.spamoverflow import Email, Domain, Customer
+from spamoverflow.models.spamoverflow import Email, Domain, Customer, DomainCount
 from utils.utils import find_domains, validate_content_json
 from spamoverflow.models import db
+from spamoverflow import cache
+from sqlalchemy import func
+from datetime import datetime
 
 api = Blueprint('api', __name__)
 
@@ -47,7 +50,34 @@ def get_email(customer_id: str, id: str):
 
 @api.route('/customers/<string:customer_id>/emails', methods=['GET'])
 def get_emails(customer_id: str):
-    return jsonify({"user": customer_id}), 200
+    #Should return a list of all submitted emails for a given customer
+    try:
+        emails = Email.query.filter(Email.customer_id == customer_id).all()
+        if type(customer_id) != str:
+            return jsonify({"Eroor": "customer id is of the wrong type"}), 400
+        return_list = []
+        for email in emails:
+            response = {
+                "id": email.id,
+                "created_at": email.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "updated_at": email.updated_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "contents": {
+                    "to": email.to_id,
+                    "from": email.from_id,
+                    "subject": email.subject
+                },
+                "status": email.status,
+                "malicious": email.malicious,
+                "domains": [domain.link for domain in email.domains],
+                "metadata": {
+                    "spamhammer": email.spamhammer_metadata
+                }
+            }
+            return_list.append(response)
+        return return_list, 200
+    except subprocess.CalledProcessError as e:
+        error_message = f"Unknow error when fetching emails for a given customer: {str(e)}"
+        return jsonify({"error": error_message}), 500 
 
 
 # Scan request for an email
@@ -100,6 +130,7 @@ def scan_request(customer_id: str):
         "content": body,
         "metadata": spamhammer_metadata
     }
+    
 
     try:
         # Specify the path to the SpamHammer binary
@@ -138,3 +169,75 @@ def scan_request(customer_id: str):
     except subprocess.CalledProcessError as e:
         error_message = f"Error trying to run spamhammer to scan an email: {str(e)}"
         return jsonify({"error": error_message}), 500 
+
+
+@api.route('/customers/<string:customer_id>/reports/domains', methods=['GET'])
+def get_domains(customer_id: str):
+    #Utilizes that we have a subprocess updating the domains count table
+    domain_counts = DomainCount.query.filter(customer_id == customer_id).all()  #This works even though domain count doesnt have a column to customer id?
+    
+    data = []
+    for domain_count in domain_counts:
+        data.append({
+            "id": domain_count.id,
+            "count": domain_count.count
+        })
+
+    response = {
+        "generated_at": domain_counts[0].updated_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "total": len(domain_counts),
+        "data": data
+    }
+
+
+    return response, 200
+
+
+@api.route('/customers/<customer_id>/reports/actors')
+@cache.cached(timeout=30)  # Cache this route for 300 secs (5min)
+def get_malicious_senders(customer_id: str):
+    # Query the database to get malicious senders for the specified customer_id
+    malicious_senders = (
+        db.session.query(Email.from_id, func.count())
+        .filter(Email.customer_id == customer_id, Email.malicious == True)
+        .group_by(Email.from_id)
+        .all()
+    )
+
+    # Prepare the response data
+    generated_at = datetime.utcnow()
+    total = len(malicious_senders)
+    data = [{"id": sender, "count": count} for sender, count in malicious_senders]
+
+    response = {
+        "generated_at": generated_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "total": total,
+        "data": data
+    }
+
+    return jsonify(response), 200
+
+
+@api.route('/customers/<customer_id>/reports/recipients')
+@cache.cached(timeout=30)  # Cache this route for 300 secs (5min)
+def get_malicious_recipients(customer_id: str):
+    # Query the database to get malicious senders for the specified customer_id
+    recipients_malicious = (
+        db.session.query(Email.to_id, func.count())
+        .filter(Email.customer_id == customer_id, Email.malicious == True)
+        .group_by(Email.to_id)
+        .all()
+    )
+
+    # Prepare the response data
+    generated_at = datetime.utcnow()
+    total = len(recipients_malicious)
+    data = [{"id": recipient, "count": count} for recipient, count in recipients_malicious]
+
+    response = {
+        "generated_at": generated_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "total": total,
+        "data": data
+    }
+
+    return jsonify(response), 200

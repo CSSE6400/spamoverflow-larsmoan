@@ -45,8 +45,14 @@ class Domain(db.Model):
 
 class DomainCount(db.Model):
     __tablename__ = "domaincount"
-    id = db.Column(String, primary_key=True)
+    id = db.Column(String, primary_key=True, default=shortuuid.uuid)
+    updated_at = db.Column(db.DateTime, nullable=False, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow) 
+
     count = db.Column(db.Integer)
+
+    #Defining relationship to customer table
+    customer_id = db.Column(String(22), ForeignKey('customers.id'))
+    customer = relationship("Customer", back_populates="domain_counts")
 
 
 #Table for Customers, which I believe is email clients
@@ -56,3 +62,6 @@ class Customer(db.Model):
 
     #One to many relationship to Email
     emails = relationship("Email", back_populates="customer", cascade="all, delete")
+
+    #One to many relationship to DomainCount
+    domain_counts = relationship("DomainCount", back_populates="customer")

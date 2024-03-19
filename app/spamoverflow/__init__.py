@@ -3,6 +3,10 @@ from os import environ
 from spamoverflow.models.spamoverflow import Email, Domain, Customer
 from apscheduler.schedulers.background import BackgroundScheduler
 from spamoverflow.tasks.periodic_tasks import update_domains_count
+from flask_caching import Cache
+
+cache = Cache(config={'CACHE_TYPE': 'simple', 'CACHE_DEFAULT_TIMEOUT': 300})  # Set cache timeout to 5 minutes = 300secs
+
 
 def create_app(config_overrides=None): 
    app = Flask(__name__) 
@@ -15,6 +19,9 @@ def create_app(config_overrides=None):
    # Load the models 
    from spamoverflow.models import db
    db.init_app(app) 
+
+   #Initialize the caching
+   cache.init_app(app)
  
    # Create the database tables 
    with app.app_context(): 
@@ -30,7 +37,7 @@ def create_app(config_overrides=None):
             update_domains_count()
 
    scheduler = BackgroundScheduler()
-   scheduler.add_job(run_update_domains_count, 'interval', seconds=5) 
+   scheduler.add_job(run_update_domains_count, 'interval', seconds=30)  #5 minutes is the max delay. I chose 30sec as trigger to keep it up to date.
    scheduler.start()
  
    return app

@@ -6,14 +6,14 @@ authors = ["Lars Moan <lars.ostberg.moan@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.10"
 flask = "^3.0.2"
 sqlalchemy = "^2.0.28"
 shortuuid = "^1.0.13"
 flask-sqlalchemy = "^3.1.1"
 jsonschema = "^4.21.1"
-apscheduler = "^3.10.4"
 flask-caching = "^2.1.0"
+psycopg2 = "^2.9.9"
 
 
 [build-system]

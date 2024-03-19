@@ -3,7 +3,7 @@ from . import db
 import shortuuid
 from sqlalchemy import Enum, ForeignKey, String
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, ENUM
 
 class Email(db.Model):
     __tablename__ = 'emails'
@@ -19,7 +19,7 @@ class Email(db.Model):
     from_id = db.Column(db.String, nullable=False)
     subject = db.Column(db.String, nullable=True)
     body = db.Column(db.String)
-    status = db.Column(Enum("pending", "scanned", "failed"), default="pending") #Status for the email
+    status = db.Column(ENUM("pending", "scanned", "failed", name="email_status"), default="pending") #Status for the email
     malicious = db.Column(db.Boolean, nullable=False, default=False)
 
     spamhammer_metadata = db.Column(db.String)

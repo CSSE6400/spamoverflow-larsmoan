@@ -3,13 +3,13 @@ import subprocess
 import shortuuid
 import json
 from spamoverflow.models.spamoverflow import Email, Domain, Customer
-from utils.utils import find_domains, validate_content_json
+from spamoverflow.utils.utils import find_domains, validate_content_json
 from spamoverflow.models import db
 from spamoverflow import cache
 from sqlalchemy import func
 from datetime import datetime
 
-api = Blueprint('api', __name__)
+api = Blueprint('api', __name__, url_prefix='/api/v1')
 
 @api.route('/')
 def home():

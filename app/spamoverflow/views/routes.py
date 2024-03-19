@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request
 import subprocess
 import shortuuid
 import json
-from spamoverflow.models.spamoverflow import Email, Domain, Customer, DomainCount
+from spamoverflow.models.spamoverflow import Email, Domain, Customer
 from utils.utils import find_domains, validate_content_json
 from spamoverflow.models import db
 from spamoverflow import cache
@@ -172,26 +172,28 @@ def scan_request(customer_id: str):
 
 
 @api.route('/customers/<string:customer_id>/reports/domains', methods=['GET'])
+@cache.cached(timeout=10)  # Cache this route for 300 secs (5min)
 def get_domains(customer_id: str):
-    #Utilizes that we have a subprocess updating the domains count table
-    domain_counts = DomainCount.query.filter(customer_id == customer_id).all()  #This works even though domain count doesnt have a column to customer id?
-    
+    malicious_domains = (
+        db.session.query(Domain.link, db.func.count())
+        .join(Email)
+        .filter(Email.customer_id == customer_id, Email.malicious == True)
+        .group_by(Domain.link)
+        .all()
+    )
+    generated_at = datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ")
     data = []
-    for domain_count in domain_counts:
+    for domain, count in malicious_domains:
         data.append({
-            "id": domain_count.id,
-            "count": domain_count.count
+            "id": domain,
+            "count": count
         })
-
     response = {
-        "generated_at": domain_counts[0].updated_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "total": len(domain_counts),
+        "generated_at": generated_at,
+        "total": len(malicious_domains),
         "data": data
     }
-
-
-    return response, 200
-
+    return jsonify(response), 200
 
 @api.route('/customers/<customer_id>/reports/actors')
 @cache.cached(timeout=30)  # Cache this route for 300 secs (5min)

@@ -1,8 +1,6 @@
 from flask import Flask
 from os import environ
 from spamoverflow.models.spamoverflow import Email, Domain, Customer
-from apscheduler.schedulers.background import BackgroundScheduler
-from spamoverflow.tasks.periodic_tasks import update_domains_count
 from flask_caching import Cache
 
 cache = Cache(config={'CACHE_TYPE': 'simple', 'CACHE_DEFAULT_TIMEOUT': 300})  # Set cache timeout to 5 minutes = 300secs
@@ -31,13 +29,5 @@ def create_app(config_overrides=None):
    # Register the blueprints 
    from spamoverflow.views.routes import api
    app.register_blueprint(api) 
-
-   def run_update_domains_count():
-        with app.app_context():
-            update_domains_count()
-
-   scheduler = BackgroundScheduler()
-   scheduler.add_job(run_update_domains_count, 'interval', seconds=30)  #5 minutes is the max delay. I chose 30sec as trigger to keep it up to date.
-   scheduler.start()
- 
+   
    return app

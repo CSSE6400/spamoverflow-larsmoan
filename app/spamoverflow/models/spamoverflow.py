@@ -25,7 +25,7 @@ class Email(db.Model):
     spamhammer_metadata = db.Column(db.String)
 
     #One to many relation with Domain
-    domains = relationship("Domain", back_populates="email", cascade="all, delete")
+    domains = relationship("Domain", back_populates="email", cascade="all, delete-orphan")
 
     #Many to one relationship with Customer
     customer_id = db.Column(String(22), ForeignKey("customers.id", ondelete="CASCADE"))
@@ -49,4 +49,4 @@ class Customer(db.Model):
     id = db.Column(String(22), primary_key=True, default=shortuuid.uuid)
 
     #One to many relationship to Email
-    emails = relationship("Email", back_populates="customer", cascade="all, delete")
+    emails = relationship("Email", back_populates="customer", cascade="all, delete-orphan")

@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify, request
 import subprocess
+import os
 import shortuuid
 import json
 from spamoverflow.models.spamoverflow import Email, Domain, Customer
@@ -97,7 +98,13 @@ def scan_request(customer_id: str):
     valid, e = validate_content_json(contents)  
     if not valid:
         return jsonify({"error": e.message}), 401   #If the body doesn't match the predefined schema, return the error
-
+    
+    existing_customer = Customer.query.filter_by(id=customer_id).first()
+    if not existing_customer:
+        customer = Customer(id = customer_id)
+        db.session.add(customer)
+        db.session.commit()
+    
     email = Email(
         id = email_id,
         customer_id = customer_id,
@@ -109,13 +116,6 @@ def scan_request(customer_id: str):
         body = body
     )
     db.session.add(email)
-    #If the customer_id is not present in the database, create a new entry
-    existing_customer = Customer.query.filter_by(id=customer_id).first()
-    if not existing_customer:
-        customer = Customer(id = customer_id)
-        db.session.add(customer)
-        db.session.commit()
-
     domains = find_domains(body)  #Extracts all the links from the body of the email
 
     for link in domains:
@@ -134,7 +134,8 @@ def scan_request(customer_id: str):
 
     try:
         # Specify the path to the SpamHammer binary
-        binary_path = "./spamoverflow/spamhammer-v1.0.0-darwin-amd64"  # This needs to be defined dynamically when dockerized
+        binary_path = os.path.join("spamoverflow", "spamhammer")
+
     
         # Running the actual spamchecker from binary
         result = subprocess.run([binary_path, "scan"], input=json.dumps(spamhammer_input), capture_output=True, text=True, check=True)

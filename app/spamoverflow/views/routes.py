@@ -12,7 +12,7 @@ from datetime import datetime
 from sqlalchemy.dialects import sqlite
 import pendulum
 
-api = Blueprint('api', __name__)
+api = Blueprint('api', __name__, url_prefix='/api/v1')
 
 @api.route('/')
 def home():

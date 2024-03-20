@@ -10,13 +10,10 @@ from rfc3339_validator import validate_rfc3339
 
 def find_domains(text: str):
     # Regular expression to find all domains in the text
-    domain_regex = r'(?:http[s]?://)?(?:www\.)?([a-zA-Z0-9.-]+(?:\.[a-zA-Z]{2,4}))'
-
+    domain_regex = r'https?://([a-zA-Z0-9.-]+(?:\.[a-zA-Z]{2,4}))'
     # Find all domains using regex
     domains = re.findall(domain_regex, text)
-
     unique_domains = set([domain for domain in domains])
-    
     return list(unique_domains)
 
 

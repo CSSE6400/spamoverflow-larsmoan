@@ -8,7 +8,7 @@ from sqlalchemy.dialects.postgresql import UUID, ENUM
 class Email(db.Model):
     __tablename__ = 'emails'
 
-    id = db.Column(String(22), primary_key=True, default=shortuuid.uuid)
+    id = db.Column(String, primary_key=True, default=shortuuid.uuid)
 
     priority = db.Column(db.Boolean, nullable=False, default=False)
 
@@ -28,17 +28,17 @@ class Email(db.Model):
     domains = relationship("Domain", back_populates="email", cascade="all, delete-orphan")
 
     #Many to one relationship with Customer
-    customer_id = db.Column(String(22), ForeignKey("customers.id", ondelete="CASCADE"))
+    customer_id = db.Column(String, ForeignKey("customers.id", ondelete="CASCADE"))
     customer = relationship("Customer", back_populates="emails")
 
 
 class Domain(db.Model):
     __tablename__ = "domains"
-    id = db.Column(String(22), primary_key=True, default=shortuuid.uuid)
+    id = db.Column(String, primary_key=True, default=shortuuid.uuid)
     link = db.Column(db.String) #Might be a foreing key to the count table later on
 
     # Establishing many-to-one relationship with Email
-    email_id = db.Column(String(22), ForeignKey('emails.id', ondelete='CASCADE'))  
+    email_id = db.Column(String, ForeignKey('emails.id', ondelete='CASCADE'))  
     email = relationship("Email", back_populates="domains")
 
 
@@ -46,7 +46,7 @@ class Domain(db.Model):
 #Table for Customers, which I believe is email clients
 class Customer(db.Model):
     __tablename__ = "customers"
-    id = db.Column(String(22), primary_key=True, default=shortuuid.uuid)
+    id = db.Column(String, primary_key=True, default=shortuuid.uuid)
 
     #One to many relationship to Email
     emails = relationship("Email", back_populates="customer", cascade="all, delete-orphan")

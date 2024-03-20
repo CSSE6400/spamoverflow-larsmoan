@@ -8,13 +8,22 @@ docker compose up should do the trick
 
 
 NOTE:
-when running the tests using docker the following command should be used:
+First time running the testsuite:
+
 ```
 docker pull ghcr.io/csse6400/spamoverflow-functionality:latest
 docker run --net='host' -e TEST_HOST='http://host.docker.internal:5000' ghcr.io/csse6400/spamoverflow-functionality:latest
 ```
 
+After pulling it once you can simply run:
+```
+docker run --name spamoverflow_test_container --net='host' -e TEST_HOST='http://host.docker.internal:5000' -d ghcr.io/csse6400/spamoverflow-functionality
+
+docker start spamoverflow_test_container
+
+docker stop spamoverflow_test_container
+
+```
 
 TODO:
-1. The get emails route is not even closed to finished. Need to open for query params and their corresponding logic
-2. Manage to run the tests from the docker container for the spamoverflow-tests. Per now it runs, but no meaningful response as to what fails.
+1. Detach the spamhammer from the post request and add it as a subroutine that can be triggered f.ex. By doing this we remove any lag on the server and can accept incoming request much faster.

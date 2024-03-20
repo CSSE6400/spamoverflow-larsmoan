@@ -4,11 +4,13 @@ import os
 import shortuuid
 import json
 from spamoverflow.models.spamoverflow import Email, Domain, Customer
-from spamoverflow.utils.utils import find_domains, validate_content_json
+from spamoverflow.utils.utils import find_domains, validate_content_json,  validate_request
 from spamoverflow.models import db
 from spamoverflow import cache
 from sqlalchemy import func
 from datetime import datetime
+from sqlalchemy.dialects import sqlite
+import pendulum
 
 api = Blueprint('api', __name__)
 
@@ -48,37 +50,79 @@ def get_email(customer_id: str, id: str):
     except Exception as e:
         return jsonify({str(e)}), 500
 
-
 @api.route('/customers/<string:customer_id>/emails', methods=['GET'])
 def get_emails(customer_id: str):
-    #Should return a list of all submitted emails for a given customer
     try:
-        emails = Email.query.filter(Email.customer_id == customer_id).all()
-        if type(customer_id) != str:
-            return jsonify({"Eroor": "customer id is of the wrong type"}), 400
-        return_list = []
-        for email in emails:
-            response = {
-                "id": email.id,
-                "created_at": email.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "updated_at": email.updated_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
-                "contents": {
-                    "to": email.to_id,
-                    "from": email.from_id,
-                    "subject": email.subject
-                },
-                "status": email.status,
-                "malicious": email.malicious,
-                "domains": [domain.link for domain in email.domains],
-                "metadata": {
-                    "spamhammer": email.spamhammer_metadata
-                }
+        validate_request(customer_id, request)
+    except ValueError as e:
+        error_msg = str(e)
+        print(f"Error invalid request input format {error_msg}")
+        return jsonify({"Error": error_msg}), 400
+    
+    #Check if the customer_id is valid, i.e that it exists
+    customer = Customer.query.get(customer_id)
+    if customer == None:
+        print("Error the user doesn't exist")
+        return jsonify({"Error": "The user doesn't exist"}), 400
+
+    # Get query parameters and validate, by specifying type Flask will automatically throw a 400 bad request if they can't be converted.
+    # this is kind of doubled up as the validate_request also handles this logic
+    limit = request.args.get('limit', 100, type=int)
+    offset = request.args.get('offset', 0, type=int)
+    start = request.args.get('start')
+    end = request.args.get('end')
+    from_email = request.args.get('from')
+    to_email = request.args.get('to')
+    state = request.args.get('state')
+    only_malicious = request.args.get('only_malicious', '').lower() == 'true'
+
+    # Build base query
+    query = Email.query.filter(Email.customer_id == customer_id)
+
+    # Apply filters
+    if start:
+        start_date = datetime.fromisoformat(start)
+        query = query.filter(Email.created_at >= start_date)
+    if end:
+        end_date = datetime.fromisoformat(end)
+        query = query.filter(Email.created_at <= end_date)
+    if from_email:
+        query = query.filter(Email.from_id == from_email)
+    if to_email:
+        query = query.filter(Email.to_id == to_email)
+    if state:
+        query = query.filter(Email.status == state)
+    if only_malicious:
+        query = query.filter(Email.malicious == True)  # Assuming malicious is a boolean field
+
+    # Apply limit and offset
+    query = query.limit(limit).offset(offset)
+
+    # Execute query
+    emails = query.all()
+
+    # Construct response
+    return_list = []
+    for email in emails:
+        response = {
+            "id": email.id,
+            "created_at": email.created_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "updated_at": email.updated_at.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "contents": {
+                "to": email.to_id,
+                "from": email.from_id,
+                "subject": email.subject
+            },
+            "status": email.status,
+            "malicious": email.malicious,
+            "domains": [domain.link for domain in email.domains],
+            "metadata": {
+                "spamhammer": email.spamhammer_metadata
             }
-            return_list.append(response)
-        return return_list, 200
-    except subprocess.CalledProcessError as e:
-        error_message = f"Unknow error when fetching emails for a given customer: {str(e)}"
-        return jsonify({"error": error_message}), 500 
+        }
+        return_list.append(response)
+    return jsonify(return_list), 200
+    
 
 
 # Scan request for an email
@@ -87,9 +131,7 @@ def scan_request(customer_id: str):
     email_id = shortuuid.uuid() #Id created for that specific email
 
     #Extract if the customer is of high priority or not, for now we simply add the priority to the database
-    priority = False
-    if customer_id[:4] == "1111":
-        priority = True
+    priority = True if customer_id[:4] == "1111" else False
 
     contents = request.json
     spamhammer_metadata = contents.get("metadata").get("spamhammer")
@@ -116,6 +158,8 @@ def scan_request(customer_id: str):
         body = body
     )
     db.session.add(email)
+    #print(pendulum.now().replace(microsecond=0)) Used to check the lag created by running spamhammer in the post request
+
     domains = find_domains(body)  #Extracts all the links from the body of the email
 
     for link in domains:
@@ -124,6 +168,7 @@ def scan_request(customer_id: str):
         email.domains.append(domain)
     
     db.session.commit()
+
     
     spamhammer_input = {
         "id": email_id,

@@ -1,11 +1,11 @@
 resource "aws_appautoscaling_target" "spamscanner" { 
   max_capacity        = 4 
   min_capacity        = 1 
-  resource_id         = "service/spamoverflow/spamoverflow" 
+  resource_id         = "service/spamoverflow-ecs-cluster/spamoverflow" 
   scalable_dimension  = "ecs:service:DesiredCount" 
   service_namespace   = "ecs" 
  
-  depends_on = [ aws_ecs_service.spamoverflow ] 
+  depends_on = [aws_ecs_service.spamoverflow] 
 } 
  
  

@@ -25,8 +25,8 @@ Dockerfile.deploy is for cloud deployment and this is referenced in main.tf when
 
 # TESTS:
 Functionality testing:
-docker run --rm --net='host' -e TEST_HOST='http://localhost:6400/api/v1' spamoverflow-tests-local:latest
+docker run --rm --net='host' -e TEST_HOST='http://localhost:6400' spamoverflow-tests-local:latest
 
 Deployment tests:
 docker pull ghcr.io/csse6400/spamoverflow-scalability:latest
-docker run --net='host' -e TEST_HOST='http://your-endpoint/api/v1' ghcr.io/csse6400/spamoverflow-scalability:latest
+docker run --net='host' -e TEST_HOST='http://your-endpoint' ghcr.io/csse6400/spamoverflow-scalability:latest

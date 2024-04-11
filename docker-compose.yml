@@ -7,19 +7,21 @@
     environment: 
       POSTGRES_PASSWORD: verySecretPassword 
       POSTGRES_USER: administrator 
-      POSTGRES_DB: todo 
+      POSTGRES_DB: spamoverflow 
     volumes: 
       - ./data/db:/var/lib/postgresql/data 
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U administrator -d todo"]
+      test: ["CMD-SHELL", "pg_isready -U administrator -d spamoverflow"]
       interval: 10s
       timeout: 5s
       retries: 5
    app: 
-    build: . 
+    build:
+      context: .
+      dockerfile: Dockerfile.dev 
     restart: always 
     environment: 
-      SQLALCHEMY_DATABASE_URI: postgresql://administrator:verySecretPassword@database:5432/todo 
+      SQLALCHEMY_DATABASE_URI: postgresql://administrator:verySecretPassword@database:5432/spamoverflow 
     ports: 
       - "8080:8080" 
     depends_on: 

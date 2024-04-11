@@ -44,3 +44,6 @@ __pycache__
 *.sqlite
 app/data
 app/spamoverflow/spamhammer
+
+data/
+spamoverflow/spamhammer

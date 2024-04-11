@@ -1,9 +1,9 @@
 resource "aws_ecs_cluster" "spamoverflow" {
-  name = "taskoverflow"
+  name = "spamoverflow-ecs-cluster"
 }
 
-resource "aws_ecs_task_definition" "spamoverflow" {
-  family                   = "spamoverflow"
+resource "aws_ecs_task_definition" "spamscanner" {
+  family                   = "spamscanner"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = 1024
@@ -15,7 +15,7 @@ resource "aws_ecs_task_definition" "spamoverflow" {
       image        = "${aws_ecr_repository.spamoverflow.repository_url}:latest"
       cpu          = 1024
       memory       = 2048
-      name         = "spamoverflow-app"
+      name         = "spamscanner"
       networkMode  = "awsvpc"
       portMappings = [
         {
@@ -26,13 +26,13 @@ resource "aws_ecs_task_definition" "spamoverflow" {
       environment = [
         {
           name  = "SQLALCHEMY_DATABASE_URI"
-          value = "postgresql://${local.database_username}:${local.database_password}@${aws_db_instance.spamoverflow_database.address}:${aws_db_instance.spamoverflow_database.port}/${aws_db_instance.spamoverflow_database.db_name}"
+          value = "postgresql://${local.database_username}:${local.database_password}@${aws_db_instance.database.address}:${aws_db_instance.database.port}/${aws_db_instance.database.db_name}"
         }
       ]
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"            = "/spamoverflow/todo"
+          "awslogs-group"            = "/spamoverflow/spamscanner"
           "awslogs-region"           = "us-east-1"
           "awslogs-stream-prefix"    = "ecs"
           "awslogs-create-group"     = "true"
@@ -43,29 +43,30 @@ resource "aws_ecs_task_definition" "spamoverflow" {
 }
 
 resource "aws_ecs_service" "spamoverflow" {
-  name            = "spamoverflow-ecs"
+  name            = "spamoverflow"
   cluster         = aws_ecs_cluster.spamoverflow.id
-  task_definition = aws_ecs_task_definition.todo.arn
+  task_definition = aws_ecs_task_definition.spamscanner.arn
   desired_count   = 1
   launch_type     = "FARGATE"
 
   network_configuration {
     subnets             = data.aws_subnets.private.ids
-    security_groups     = [aws_security_group.todo.id]
+    security_groups     = [aws_security_group.spamscanner.id]
     assign_public_ip    = true
   }
 
   load_balancer { 
-    target_group_arn = aws_lb_target_group.todo.arn 
-    container_name   = "spamoverflow" 
+    target_group_arn = aws_lb_target_group.spamscanner.arn 
+    container_name   = "spamscanner" 
     container_port   = 6400 
   }
 
 }
 
-resource "aws_security_group" "spamoverflow" {
-  name = "spamoverflow"
-  description = "SpamoverFloww Security Group"
+//Security group for the task?
+resource "aws_security_group" "spamscanner" {
+  name = "spamscanner"
+  description = "SpamoverFlow Security Group"
 
   ingress {
     from_port = 6400

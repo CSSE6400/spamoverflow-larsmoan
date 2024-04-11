@@ -1,8 +1,8 @@
-resource "aws_lb_target_group" "spamoverflow" { 
-  name          = "spamoverflow" 
+resource "aws_lb_target_group" "spamscanner" { 
+  name          = "spamscanner" 
   port          = 6400 
   protocol      = "HTTP" 
-  vpc_id        = aws_security_group.spamoverflow.vpc_id 
+  vpc_id        = aws_security_group.spamscanner.vpc_id 
   target_type   = "ip" 
  
   health_check { 
@@ -18,7 +18,7 @@ resource "aws_lb_target_group" "spamoverflow" {
 
 
 resource "aws_lb" "spamoverflow" { 
-  name               = "spamoverflow" 
+  name               = "spamoverflow-lb" 
   internal           = false 
   load_balancer_type = "application" 
   subnets            = data.aws_subnets.private.ids 
@@ -45,13 +45,13 @@ resource "aws_security_group" "spamoverflow" {
 }
 
 //Listener aka entrypoint to the load balancer
-resource "aws_lb_listener" "spamoverflow" { 
+resource "aws_lb_listener" "spamscanner" { 
   load_balancer_arn   = aws_lb.spamoverflow.arn 
   port                = "80" 
   protocol            = "HTTP" 
  
   default_action { 
     type              = "forward" 
-    target_group_arn  = aws_lb_target_group.spamoverflow.arn 
+    target_group_arn  = aws_lb_target_group.spamscanner.arn 
   } 
 }

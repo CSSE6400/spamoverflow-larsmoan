@@ -23,6 +23,28 @@ provider "aws" {
 }
 
 data "aws_ecr_authorization_token" "ecr_token" {} 
+
+// ECR Resources
+resource "aws_ecr_repository" "spamoverflow" {
+  name = "spamoverflow-ecr-repo"
+}
+
+resource "docker_image" "spamoverflow_image" {
+  name = "${aws_ecr_repository.spamoverflow.repository_url}:latest"
+
+  build {
+    context = "."
+    dockerfile = "Dockerfile.deploy"    //Uses the deployment dockerfile which ensures compatability with linux
+    labels = {
+      version = 1.0
+    }
+  }
+}
+
+resource "docker_registry_image" "taskoverflow" {
+  name = docker_image.spamoverflow_image.name
+}
+
  
 provider "docker" { 
  registry_auth { 
@@ -55,7 +77,8 @@ data "aws_subnets" "private" {
 
 
 //This is the magic trick to gain access to the url that the load balancer provides?
+// I think it gets the DNS from the load balancer and actually writes it to ./api.txt
 resource "local_file" "url" {
-    content  = "http://my-url/" # replace this with a URL from your terraform
+    content = "http://${aws_lb.spamoverflow.dns_name}/"
     filename = "./api.txt"
 }

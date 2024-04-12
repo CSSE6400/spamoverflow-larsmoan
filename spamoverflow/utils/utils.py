@@ -1,8 +1,6 @@
 import re
 import uuid
-import jsonschema_specifications
 
-import datemath
 
 import jsonschema
 from jsonschema import validate

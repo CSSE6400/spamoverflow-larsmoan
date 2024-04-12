@@ -10,8 +10,11 @@ from sqlalchemy import func
 from spamoverflow import cache
 from spamoverflow.models import db
 from spamoverflow.models.spamoverflow import Customer, Domain, Email
-from spamoverflow.utils.utils import (find_domains, validate_content_json,
-                                      validate_request)
+from spamoverflow.utils.utils import (
+    find_domains,
+    validate_content_json,
+    validate_request,
+)
 
 api = Blueprint("api", __name__)
 

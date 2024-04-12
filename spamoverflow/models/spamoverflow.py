@@ -1,8 +1,8 @@
 import datetime
 
 import shortuuid
-from sqlalchemy import Enum, ForeignKey, String
-from sqlalchemy.dialects.postgresql import ENUM, UUID
+from sqlalchemy import ForeignKey, String
+from sqlalchemy.dialects.postgresql import ENUM
 from sqlalchemy.orm import relationship
 
 from . import db

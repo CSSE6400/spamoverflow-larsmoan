@@ -1,9 +1,10 @@
 import re
 import uuid
-from datetime import datetime
+import jsonschema_specifications
+
+import datemath
 
 import jsonschema
-from flask import request
 from jsonschema import validate
 from rfc3339_validator import validate_rfc3339
 
@@ -61,7 +62,7 @@ def validate_request(customer_id, request):
 
     # Validate customer_id as UUID
     try:
-        uuid_obj = uuid.UUID(customer_id)
+        uuid.UUID(customer_id)
     except ValueError:
         raise ValueError(f"Invalid customer id: {customer_id}")
 

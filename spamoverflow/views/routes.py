@@ -6,8 +6,7 @@ import json
 from spamoverflow.models.spamoverflow import Email, Domain, Customer
 from spamoverflow.utils.utils import (
     find_domains,
-    validate_content_json,
-    validate_request,
+    validate_content_json,validate_request,
 )
 from spamoverflow.models import db
 from spamoverflow import cache

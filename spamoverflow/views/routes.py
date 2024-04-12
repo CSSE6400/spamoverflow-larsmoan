@@ -1,18 +1,17 @@
-from flask import Blueprint, jsonify, request
-import subprocess
-import os
-import shortuuid
 import json
-from spamoverflow.models.spamoverflow import Email, Domain, Customer
-from spamoverflow.utils.utils import (
-    find_domains,
-    validate_content_json,
-    validate_request,
-)
-from spamoverflow.models import db
-from spamoverflow import cache
-from sqlalchemy import func
+import os
+import subprocess
 from datetime import datetime
+
+import shortuuid
+from flask import Blueprint, jsonify, request
+from sqlalchemy import func
+
+from spamoverflow import cache
+from spamoverflow.models import db
+from spamoverflow.models.spamoverflow import Customer, Domain, Email
+from spamoverflow.utils.utils import (find_domains, validate_content_json,
+                                      validate_request)
 
 api = Blueprint("api", __name__)
 

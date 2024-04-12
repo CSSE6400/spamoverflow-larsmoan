@@ -1,9 +1,11 @@
 import datetime
-from . import db
+
 import shortuuid
 from sqlalchemy import Enum, ForeignKey, String
+from sqlalchemy.dialects.postgresql import ENUM, UUID
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID, ENUM
+
+from . import db
 
 
 class Email(db.Model):

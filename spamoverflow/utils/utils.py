@@ -1,9 +1,10 @@
 import re
-import jsonschema
-from jsonschema import validate
-from datetime import datetime
 import uuid
+from datetime import datetime
+
+import jsonschema
 from flask import request
+from jsonschema import validate
 from rfc3339_validator import validate_rfc3339
 
 

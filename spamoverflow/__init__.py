@@ -1,5 +1,6 @@
-from flask import Flask
 from os import environ
+
+from flask import Flask
 from flask_caching import Cache
 
 cache = Cache(
